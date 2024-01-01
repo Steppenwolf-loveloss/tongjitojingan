@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>出行方式选择帮手</title>
+</head>
+<body>
+
+<h1>出行方式选择帮手</h1>
+
+<form id="travel-options-form" onsubmit="return getBestTravelOption(event)">
+
+
+  <label for="budget">出行预算(元):</label>
+  <input type="number" id="budget" name="budget" min="0">
+  <br>
+
+  <label for="time-budget">时间预算(分钟):</label>
+  <input type="number" id="time-budget" name="time-budget" min="0">
+  <br>
+
+  <label for="time-of-day">出行时段:</label>
+  <select id="time-of-day" name="time-of-day">
+    <option value="daytime">白天</option>
+    <option value="night">夜晚</option>
+    <option value="rush-hour">早晚高峰</option>
+  </select>
+  <br>
+
+  <input type="submit" value="选择最佳出行方式">
+</form>
+
+<p id="suggestion"></p> <!-- 用户的选择会在这里显示出来 -->
+
+<script>
+function getTravelTime(travelMode, timeOfDay) {
+    const travelTimes = {
+        taxi: { daytime: 30, night: 30, 'rush-hour': 45 },
+        public: { daytime: 45, 'rush-hour': 150 }, // 移除了夜晚的公共交通选项
+        cycling: 60,
+        walking: 150,
+    };
+    if (travelMode === 'public' && timeOfDay === 'night') {
+        return Infinity; // 夜晚时公共交通不可用
+    }
+    return travelMode === 'cycling' || travelMode === 'walking'
+        ? travelTimes[travelMode]
+        : travelTimes[travelMode][timeOfDay];
+}
+
+function getBestTravelOption(event) {
+    event.preventDefault(); // 阻止表单提交后的页面刷新
+
+    const day = document.getElementById('day').value;
+    const budget = parseInt(document.getElementById('budget').value, 10);
+    const timeBudget = parseInt(document.getElementById('time-budget').value, 10);
+    const timeOfDay = document.getElementById('time-of-day').value;
+
+    let suggestion = '没有找到合适的出行方式。';
+    let bestModes = [];
+
+    // 根据预算和时间添加可用的交通方式
+    if (budget >= 48 && getTravelTime('taxi', timeOfDay) <= timeBudget) bestModes.push('打车');
+    if (budget >= 5 && getTravelTime('public', timeOfDay) <= timeBudget) bestModes.push('公共交通');
+    if (getTravelTime('cycling', timeOfDay) <= timeBudget) bestModes.push('骑行');
+    if (getTravelTime('walking', timeOfDay) <= timeBudget) bestModes.push('步行');
+
+    // 根据优先顺序推荐交通方式
+    if (bestModes.includes('步行')) {
+        suggestion = '建议步行，这是最环保的出行方式。';
+    } else if (bestModes.includes('骑行')) {
+        suggestion = '建议骑行，相比步行快一些同时也环保。';
+    } else if (bestModes.includes('公共交通')) {
+        suggestion = '建议使用公共交通，如地铁或公交车。';
+    } else if (bestModes.includes('打车')) {
+        suggestion = '可以选择打车出行，这是最快但成本较高的方式。';
+    }
+
+    document.getElementById('suggestion').innerText = suggestion;
+    return false; // 阻止表单默认的提交行为
+}
+</script>
+
+</body>
+</html>
